@@ -1,12 +1,14 @@
+# Test script for bypass nodepay API's | Bypassed by IM-Hanzou 
 import asyncio
 import aiohttp
 import time
 import uuid
+import random
 import cloudscraper
 from loguru import logger
 
 def show_warning():
-    confirm = input("Nodepay Autofarmer by IM-Hanzou: github.com/im-hanzou\n\nBy using this tool means you understand the risks. do it at your own risk! \nPress Enter to continue or Ctrl+C to cancel... ")
+    confirm = input("THIS IS BYPASSED VERSION - BYPASSED BY IM-HANZOU (github/im-hanzou) \n\nBy using this tool means you understand the risks. do it at your own risk! \nPress Enter to continue or Ctrl+C to cancel... ")
 
     if confirm.strip() == "":
         print("Continuing...")
@@ -17,10 +19,34 @@ def show_warning():
 PING_INTERVAL = 60
 RETRIES = 60
 
-DOMAIN_API = {
-    "SESSION": "http://api.nodepay.ai/api/auth/session",
-    "PING": "https://nw.nodepay.org/api/network/ping"
+# OLD Domain API
+# PING API: https://nodewars.nodepay.ai / https://nw.nodepay.ai | https://nw2.nodepay.ai | IP: 54.255.192.166
+# SESSION API: https://api.nodepay.ai | IP: 18.136.143.169, 52.77.170.182
+
+# NEW HOST DOMAIN
+#    "SESSION": "https://api.nodepay.org/api/auth/session",
+#    "PING": "https://nw.nodepay.org/api/network/ping"
+
+# Testing | Found nodepay real ip address :P | Cloudflare host bypassed!
+DOMAIN_API_ENDPOINTS = {
+    "SESSION": [
+        # http://18.136.143.169/api/auth/session / rolling back just for auth
+        "http://api.nodepay.ai/api/auth/session"
+    ],
+    "PING": [
+        "http://54.255.192.166/api/network/ping",
+        "http://52.77.10.116/api/network/ping",
+        "http://13.215.134.222/api/network/ping"
+    ]
 }
+
+def get_random_endpoint(endpoint_type):
+    return random.choice(DOMAIN_API_ENDPOINTS[endpoint_type])
+
+def get_endpoint(endpoint_type):
+    if endpoint_type not in DOMAIN_API_ENDPOINTS:
+        raise ValueError(f"Unknown endpoint type: {endpoint_type}")
+    return get_random_endpoint(endpoint_type)
 
 CONNECTION_STATES = {
     "CONNECTED": 1,
@@ -50,7 +76,7 @@ async def render_profile_info(proxy, token):
         if not np_session_info:
             # Generate new browser_id
             browser_id = uuidv4()
-            response = await call_api(DOMAIN_API["SESSION"], {}, proxy, token)
+            response = await call_api(get_endpoint("SESSION"), {}, proxy, token)
             valid_resp(response)
             account_info = response["data"]
             if account_info.get("uid"):
@@ -113,7 +139,7 @@ async def ping(proxy, token):
     current_time = time.time()
 
     if proxy in last_ping_time and (current_time - last_ping_time[proxy]) < PING_INTERVAL:
-        logger.info(f"Skipping ping for proxy { proxy}, not enough time elapsed")
+        logger.info(f"Skipping ping for proxy {proxy}, not enough time elapsed")
         return
 
     last_ping_time[proxy] = current_time
@@ -126,7 +152,7 @@ async def ping(proxy, token):
             "version":"2.2.7"
         }
 
-        response = await call_api(DOMAIN_API["PING"], data, proxy, token)
+        response = await call_api(get_endpoint("PING"), data, proxy, token)
         if response["code"] == 0:
             logger.info(f"Ping successful via proxy {proxy}: {response}")
             RETRIES = 0
